@@ -28,7 +28,7 @@ EMTFNtuple = cms.EDAnalyzer('EMTFNtuple',
     # Change defaults to enable/disable processing of various inputs
     enablePhase2     = cms.bool(False),
 
-    useCSC           = cms.bool(True),
+    useCSC           = cms.bool(False),
     useRPC           = cms.bool(False),
     useCPPF          = cms.bool(False),
     useGEM           = cms.bool(False),
@@ -38,7 +38,7 @@ EMTFNtuple = cms.EDAnalyzer('EMTFNtuple',
     useDT            = cms.bool(False),
 
 
-    useEMTFHits      = cms.bool(True),
+    useEMTFHits      = cms.bool(False),
     useEMTFUnpHits   = cms.bool(False),
     
     useEMTFTracks    = cms.bool(True),

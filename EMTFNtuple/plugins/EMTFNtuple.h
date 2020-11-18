@@ -100,7 +100,7 @@ private:
   // Phase 2 TPs
   const edm::InputTag   IRPCInputTag_;
   const edm::InputTag   ME0InputTag_;
-  const edm::InputTag   DTInputTag_;
+  // const edm::InputTag   DTInputTag_;
 
 
   // L1T collections
@@ -151,7 +151,7 @@ private:
   // Phase 2 TPs
   edm::EDGetTokenT<emtf::IRPCTag::digi_collection>  IRPCInputToken_;
   edm::EDGetTokenT<emtf::ME0Tag::digi_collection>   ME0InputToken_;
-  edm::EDGetTokenT<emtf::DTTag::digi_collection>    DTInputToken_;
+  // edm::EDGetTokenT<emtf::DTTag::digi_collection>    DTInputToken_;
   
   // L1T collections
   edm::EDGetTokenT<l1t::EMTFHitCollection>          EMTFHitToken_;
@@ -177,7 +177,7 @@ private:
 
   TriggerPrimitiveCollection  IRPCInputs_;
   TriggerPrimitiveCollection  ME0Inputs_;
-  TriggerPrimitiveCollection  DTInputs_;
+  // TriggerPrimitiveCollection  DTInputs_;
 
   l1t::EMTFHitCollection      EMTFHits_;
   l1t::EMTFHitCollection      EMTFUnpHits_;
@@ -254,14 +254,14 @@ private:
   std::unique_ptr<std::vector<int16_t> >  me0Input_partition;
 
   // DT Inputs
-  std::unique_ptr<std::vector<int16_t> >  dtInput_wheel;
-  std::unique_ptr<std::vector<int16_t> >  dtInput_station;
-  std::unique_ptr<std::vector<int16_t> >  dtInput_btigroup;
-  std::unique_ptr<std::vector<int16_t> >  dtInput_bx;
-  std::unique_ptr<std::vector<int16_t> >  dtInput_strip;
-  std::unique_ptr<std::vector<int16_t> >  dtInput_wire;
-  std::unique_ptr<std::vector<int16_t> >  dtInput_quality;
-  std::unique_ptr<std::vector<int16_t> >  dtInput_bend;
+  // std::unique_ptr<std::vector<int16_t> >  dtInput_wheel;
+  // std::unique_ptr<std::vector<int16_t> >  dtInput_station;
+  // std::unique_ptr<std::vector<int16_t> >  dtInput_btigroup;
+  // std::unique_ptr<std::vector<int16_t> >  dtInput_bx;
+  // std::unique_ptr<std::vector<int16_t> >  dtInput_strip;
+  // std::unique_ptr<std::vector<int16_t> >  dtInput_wire;
+  // std::unique_ptr<std::vector<int16_t> >  dtInput_quality;
+  // std::unique_ptr<std::vector<int16_t> >  dtInput_bend;
 
 
 
@@ -335,8 +335,12 @@ private:
   std::unique_ptr<std::vector<float  > >  emtfTrack_invpt_prompt;
   std::unique_ptr<std::vector<float  > >  emtfTrack_invpt_displ;
   std::unique_ptr<std::vector<float  > >  emtfTrack_phi;        // in degrees
+  std::unique_ptr<std::vector<int32_t> >  emtfTrack_phi_fp;        // in degrees
   std::unique_ptr<std::vector<float  > >  emtfTrack_theta;      // in degrees
+  std::unique_ptr<std::vector<int32_t> >  emtfTrack_theta_fp;      // in degrees
   std::unique_ptr<std::vector<float  > >  emtfTrack_eta;
+  std::unique_ptr<std::vector<int32_t> >  emtfTrack_GMT_phi;
+  std::unique_ptr<std::vector<int32_t> >  emtfTrack_GMT_eta;
   std::unique_ptr<std::vector<int16_t> >  emtfTrack_q;          // charge
   //
   std::unique_ptr<std::vector<uint64_t> > emtfTrack_address;
@@ -378,7 +382,9 @@ private:
   // GMT Muons
   std::unique_ptr<std::vector<float  > >  gmtMuon_pt;
   std::unique_ptr<std::vector<float  > >  gmtMuon_pt_dxy;
+  std::unique_ptr<std::vector<float  > >  gmtMuon_pt_dxyNN;
   std::unique_ptr<std::vector<int16_t> >  gmtMuon_dxy;
+  std::unique_ptr<std::vector<float  > >  gmtMuon_dxyNN;
   std::unique_ptr<std::vector<float  > >  gmtMuon_phi;        // in degrees
   std::unique_ptr<std::vector<float  > >  gmtMuon_eta;
   std::unique_ptr<std::vector<int16_t> >  gmtMuon_q;          // charge
@@ -402,6 +408,7 @@ private:
   std::unique_ptr<std::vector<float  > >  genPart_phi;
   std::unique_ptr<std::vector<int16_t> >  genPart_q;          // charge
   std::unique_ptr<std::vector<int16_t> >  genPart_ID;      
+  std::unique_ptr<std::vector<int32_t> >  genPart_parentID;      
   std::unique_ptr<std::vector<float  > >  genPart_vx;      
   std::unique_ptr<std::vector<float  > >  genPart_vy;      
   std::unique_ptr<std::vector<float  > >  genPart_vz;      

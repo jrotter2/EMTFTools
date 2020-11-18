@@ -24,7 +24,7 @@ EMTFNtuple::EMTFNtuple(const edm::ParameterSet& iConfig):
 
   IRPCInputTag_       (iConfig.getParameter<edm::InputTag>("IRPCInputTag")),
   ME0InputTag_        (iConfig.getParameter<edm::InputTag>("ME0InputTag")),
-  DTInputTag_         (iConfig.getParameter<edm::InputTag>("DTInputTag")),
+  // DTInputTag_         (iConfig.getParameter<edm::InputTag>("DTInputTag")),
 
   EMTFHitTag_         (iConfig.getParameter<edm::InputTag>("EMTFHitTag")),
   EMTFUnpHitTag_      (iConfig.getParameter<edm::InputTag>("EMTFUnpHitTag")),
@@ -75,7 +75,7 @@ EMTFNtuple::EMTFNtuple(const edm::ParameterSet& iConfig):
 
   IRPCInputToken_      = consumes<emtf::IRPCTag::digi_collection>    (IRPCInputTag_);
   ME0InputToken_       = consumes<emtf::ME0Tag::digi_collection>     (ME0InputTag_);
-  DTInputToken_        = consumes<emtf::DTTag::digi_collection>      (DTInputTag_);
+  // DTInputToken_        = consumes<emtf::DTTag::digi_collection>      (DTInputTag_);
   
   EMTFHitToken_        = consumes<l1t::EMTFHitCollection>            (EMTFHitTag_);
   EMTFUnpHitToken_     = consumes<l1t::EMTFHitCollection>            (EMTFUnpHitTag_);
@@ -250,13 +250,17 @@ void EMTFNtuple::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup
 
     emtfTrack_pt           ->push_back(trk.Pt());
     emtfTrack_xml_pt       ->push_back(trk.Pt_XML());
-    // emtfTrack_pt_dxy       ->push_back(trk.Pt_dxy());
-    // emtfTrack_dxy          ->push_back(trk.Dxy());
+    emtfTrack_pt_dxy       ->push_back(trk.NN_pt_dxy());
+    emtfTrack_dxy          ->push_back(trk.NN_dxy());
     // emtfTrack_invpt_prompt ->push_back(trk.Invpt_prompt());
     // emtfTrack_invpt_displ  ->push_back(trk.Invpt_displ());
     emtfTrack_phi          ->push_back(trk.Phi_glob());
+    emtfTrack_phi_fp       ->push_back(trk.Phi_fp());
     emtfTrack_theta        ->push_back(trk.Theta());
+    emtfTrack_theta_fp     ->push_back(trk.Theta_fp());
     emtfTrack_eta          ->push_back(trk.Eta());
+    emtfTrack_GMT_phi      ->push_back(trk.GMT_phi());
+    emtfTrack_GMT_eta      ->push_back(trk.GMT_eta());
     emtfTrack_q            ->push_back(trk.Charge());
     //
     emtfTrack_address      ->push_back(ptlut_data.address);
@@ -307,8 +311,10 @@ void EMTFNtuple::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup
   if(useGMTMuons_){  
     for (const auto& muon : *GMTMuons_) {  
       gmtMuon_pt        ->push_back(muon.pt());
-      // gmtMuon_pt_dxy    ->push_back(muon.ptUnconstrained());
-      // gmtMuon_dxy       ->push_back(muon.hwDXY());
+      gmtMuon_pt_dxy    ->push_back(muon.ptUnconstrained());
+      gmtMuon_pt_dxyNN  ->push_back(muon.ptUnconstrainedNN());
+      gmtMuon_dxy       ->push_back(muon.hwDXY());
+      gmtMuon_dxyNN     ->push_back(muon.hwDXYNN());
       gmtMuon_phi       ->push_back(muon.phi());
       gmtMuon_eta       ->push_back(muon.eta());
       gmtMuon_q         ->push_back(muon.charge());
@@ -334,12 +340,19 @@ void EMTFNtuple::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup
   // Gen particles
   if(useGENParts_){
     for (const auto& part : *GENParts_) {
+      if (abs(part.pdgId()) != 13) continue;
+
+      int parentID = -9999;
+      if (part.numberOfMothers() > 0) parentID = dynamic_cast<const reco::GenParticle*>(part.mother(0))->pdgId();
+      if (parentID == part.pdgId()) continue;
+
       genPart_pt         ->push_back(part.pt());
       // genPart_dxy        ->push_back(part.dxy());
       genPart_eta        ->push_back(part.eta());
       genPart_phi        ->push_back(part.phi());
       genPart_q          ->push_back(part.charge());
       genPart_ID         ->push_back(part.pdgId());
+      genPart_parentID   ->push_back(parentID);
       genPart_vx         ->push_back(part.vx());
       genPart_vy         ->push_back(part.vy());
       genPart_vz         ->push_back(part.vz());
@@ -389,24 +402,27 @@ void EMTFNtuple::getHandles(const edm::Event& iEvent, const edm::EventSetup& iSe
 
   // Run 3 inputs
   if(useCSC_){
-     collector_.extractPrimitives(emtf::CSCTag(), tp_geom, iEvent, CSCInputToken_, CSCInputs_);
+     // collector_.extractPrimitives(emtf::CSCTag(), tp_geom, iEvent, CSCInputToken_, CSCInputs_);
+     collector_.extractPrimitives(CSCTag(), iEvent, CSCInputToken_, CSCInputs_);
   }
 
   if(useRPC_){
-     collector_.extractPrimitives(emtf::RPCTag(), tp_geom, iEvent, RPCInputToken_, RPCInputs_);
+     // collector_.extractPrimitives(emtf::RPCTag(), tp_geom, iEvent, RPCInputToken_, RPCInputs_);
+     collector_.extractPrimitives(RPCTag(), iEvent, RPCInputToken_, RPCInputs_);
   }
 
   if(useGEM_){
-     collector_.extractPrimitives(emtf::GEMTag(), tp_geom, iEvent, GEMInputToken_, GEMInputs_);
+     // collector_.extractPrimitives(emtf::GEMTag(), tp_geom, iEvent, GEMInputToken_, GEMInputs_);
+     collector_.extractPrimitives(GEMTag(), iEvent, GEMInputToken_, GEMInputs_);
   }
 
   // Phase 2 inputs
   if(useIRPC_){
-     collector_.extractPrimitives(emtf::IRPCTag(), tp_geom, iEvent, IRPCInputToken_, IRPCInputs_);
+     // collector_.extractPrimitives(emtf::IRPCTag(), tp_geom, iEvent, IRPCInputToken_, IRPCInputs_);
   }
 
   if(useME0_){
-     collector_.extractPrimitives(emtf::ME0Tag(), tp_geom, iEvent, ME0InputToken_, ME0Inputs_);
+     // collector_.extractPrimitives(emtf::ME0Tag(), tp_geom, iEvent, ME0InputToken_, ME0Inputs_);
   }
 
   if(useDT_){
@@ -607,14 +623,14 @@ void EMTFNtuple::makeTree() {
   me0Input_partition         = std::make_unique<std::vector<int16_t> >();
 
   // DT Inputs
-  dtInput_wheel              = std::make_unique<std::vector<int16_t> >();
-  dtInput_station            = std::make_unique<std::vector<int16_t> >();
-  dtInput_btigroup           = std::make_unique<std::vector<int16_t> >();
-  dtInput_bx                 = std::make_unique<std::vector<int16_t> >();
-  dtInput_strip              = std::make_unique<std::vector<int16_t> >();
-  dtInput_wire               = std::make_unique<std::vector<int16_t> >();
-  dtInput_quality            = std::make_unique<std::vector<int16_t> >();
-  dtInput_bend               = std::make_unique<std::vector<int16_t> >();
+  // dtInput_wheel              = std::make_unique<std::vector<int16_t> >();
+  // dtInput_station            = std::make_unique<std::vector<int16_t> >();
+  // dtInput_btigroup           = std::make_unique<std::vector<int16_t> >();
+  // dtInput_bx                 = std::make_unique<std::vector<int16_t> >();
+  // dtInput_strip              = std::make_unique<std::vector<int16_t> >();
+  // dtInput_wire               = std::make_unique<std::vector<int16_t> >();
+  // dtInput_quality            = std::make_unique<std::vector<int16_t> >();
+  // dtInput_bend               = std::make_unique<std::vector<int16_t> >();
 
 
 
@@ -681,15 +697,19 @@ void EMTFNtuple::makeTree() {
   emtfUnpHit_size            = std::make_unique<int32_t>(0);
 
   // EMTF Tracks
-  emtfTrack_pt               = std::make_unique<std::vector<float> >();
-  emtfTrack_xml_pt           = std::make_unique<std::vector<float> >();
-  emtfTrack_pt_dxy           = std::make_unique<std::vector<float> >();
-  emtfTrack_dxy              = std::make_unique<std::vector<float> >();
-  emtfTrack_invpt_prompt     = std::make_unique<std::vector<float> >();
-  emtfTrack_invpt_displ      = std::make_unique<std::vector<float> >();
-  emtfTrack_phi              = std::make_unique<std::vector<float> >();        // in degrees
-  emtfTrack_theta            = std::make_unique<std::vector<float> >();      // in degrees
-  emtfTrack_eta              = std::make_unique<std::vector<float> >();
+  emtfTrack_pt               = std::make_unique<std::vector<float  > >();
+  emtfTrack_xml_pt           = std::make_unique<std::vector<float  > >();
+  emtfTrack_pt_dxy           = std::make_unique<std::vector<float  > >();
+  emtfTrack_dxy              = std::make_unique<std::vector<float  > >();
+  emtfTrack_invpt_prompt     = std::make_unique<std::vector<float  > >();
+  emtfTrack_invpt_displ      = std::make_unique<std::vector<float  > >();
+  emtfTrack_phi              = std::make_unique<std::vector<float  > >();        // in degrees
+  emtfTrack_phi_fp           = std::make_unique<std::vector<int32_t> >();        // in degrees
+  emtfTrack_theta            = std::make_unique<std::vector<float  > >();       // in degrees
+  emtfTrack_theta_fp         = std::make_unique<std::vector<int32_t> >();       // in degrees
+  emtfTrack_eta              = std::make_unique<std::vector<float  > >();
+  emtfTrack_GMT_phi          = std::make_unique<std::vector<int32_t> >();
+  emtfTrack_GMT_eta          = std::make_unique<std::vector<int32_t> >();
   emtfTrack_q                = std::make_unique<std::vector<int16_t> >();          // charge
   //
   emtfTrack_address          = std::make_unique<std::vector<uint64_t> >();
@@ -731,7 +751,9 @@ void EMTFNtuple::makeTree() {
   // GMT Muons
   gmtMuon_pt                 = std::make_unique<std::vector<float> >();
   gmtMuon_pt_dxy             = std::make_unique<std::vector<float> >();
+  gmtMuon_pt_dxyNN           = std::make_unique<std::vector<float> >();
   gmtMuon_dxy                = std::make_unique<std::vector<int16_t> >();
+  gmtMuon_dxyNN              = std::make_unique<std::vector<float> >();
   gmtMuon_phi                = std::make_unique<std::vector<float> >();        // in degrees
   gmtMuon_eta                = std::make_unique<std::vector<float> >();
   gmtMuon_q                  = std::make_unique<std::vector<int16_t> >();          // charge
@@ -755,6 +777,7 @@ void EMTFNtuple::makeTree() {
   genPart_phi                = std::make_unique<std::vector<float> >();
   genPart_q                  = std::make_unique<std::vector<int16_t> >();          // charge
   genPart_ID                 = std::make_unique<std::vector<int16_t> >();      
+  genPart_parentID           = std::make_unique<std::vector<int32_t> >();      
   genPart_vx                 = std::make_unique<std::vector<float> >();      
   genPart_vy                 = std::make_unique<std::vector<float> >();      
   genPart_vz                 = std::make_unique<std::vector<float> >();      
@@ -835,14 +858,14 @@ void EMTFNtuple::makeTree() {
     tree->Branch("me0Input_partition"  , &(*me0Input_partition  ));
 
     // DT Inputs
-    tree->Branch("dtInput_wheel"     , &(*dtInput_wheel     ));
-    tree->Branch("dtInput_station"   , &(*dtInput_station   ));
-    tree->Branch("dtInput_btigroup"  , &(*dtInput_btigroup  ));
-    tree->Branch("dtInput_bx"        , &(*dtInput_bx        ));
-    tree->Branch("dtInput_strip"     , &(*dtInput_strip     ));
-    tree->Branch("dtInput_wire"      , &(*dtInput_wire      ));
-    tree->Branch("dtInput_quality"   , &(*dtInput_quality   ));
-    tree->Branch("dtInput_bend"      , &(*dtInput_bend      ));
+    // tree->Branch("dtInput_wheel"     , &(*dtInput_wheel     ));
+    // tree->Branch("dtInput_station"   , &(*dtInput_station   ));
+    // tree->Branch("dtInput_btigroup"  , &(*dtInput_btigroup  ));
+    // tree->Branch("dtInput_bx"        , &(*dtInput_bx        ));
+    // tree->Branch("dtInput_strip"     , &(*dtInput_strip     ));
+    // tree->Branch("dtInput_wire"      , &(*dtInput_wire      ));
+    // tree->Branch("dtInput_quality"   , &(*dtInput_quality   ));
+    // tree->Branch("dtInput_bend"      , &(*dtInput_bend      ));
   }
 
 
@@ -923,8 +946,12 @@ void EMTFNtuple::makeTree() {
     tree->Branch("emtfTrack_invpt_prompt", &(*emtfTrack_invpt_prompt));
     tree->Branch("emtfTrack_invpt_displ" , &(*emtfTrack_invpt_displ ));
     tree->Branch("emtfTrack_phi"         , &(*emtfTrack_phi         ));
+    tree->Branch("emtfTrack_phi_fp"      , &(*emtfTrack_phi_fp      ));
     tree->Branch("emtfTrack_theta"       , &(*emtfTrack_theta       ));
+    tree->Branch("emtfTrack_theta_fp"    , &(*emtfTrack_theta_fp    ));
     tree->Branch("emtfTrack_eta"         , &(*emtfTrack_eta         ));
+    tree->Branch("emtfTrack_GMT_phi"     , &(*emtfTrack_GMT_phi     ));
+    tree->Branch("emtfTrack_GMT_eta"     , &(*emtfTrack_GMT_eta     ));
     tree->Branch("emtfTrack_q"           , &(*emtfTrack_q           ));
     //
     tree->Branch("emtfTrack_address"     , &(*emtfTrack_address     ));
@@ -970,7 +997,9 @@ void EMTFNtuple::makeTree() {
   if (useGMTMuons_){
     tree->Branch("gmtMuon_pt"        , &(*gmtMuon_pt        ));
     tree->Branch("gmtMuon_pt_dxy"    , &(*gmtMuon_pt_dxy    ));
+    tree->Branch("gmtMuon_pt_dxyNN"  , &(*gmtMuon_pt_dxyNN  ));
     tree->Branch("gmtMuon_dxy"       , &(*gmtMuon_dxy       ));
+    tree->Branch("gmtMuon_dxyNN"     , &(*gmtMuon_dxyNN     ));
     tree->Branch("gmtMuon_phi"       , &(*gmtMuon_phi       ));
     tree->Branch("gmtMuon_eta"       , &(*gmtMuon_eta       ));
     tree->Branch("gmtMuon_q"         , &(*gmtMuon_q         ));
@@ -998,6 +1027,7 @@ void EMTFNtuple::makeTree() {
     tree->Branch("genPart_eta"       , &(*genPart_eta       ));
     tree->Branch("genPart_q"         , &(*genPart_q         ));
     tree->Branch("genPart_ID"        , &(*genPart_ID        ));
+    tree->Branch("genPart_parentID"  , &(*genPart_parentID  ));
     tree->Branch("genPart_vx"        , &(*genPart_vx        ));
     tree->Branch("genPart_vy"        , &(*genPart_vy        ));
     tree->Branch("genPart_vz"        , &(*genPart_vz        ));
@@ -1080,14 +1110,14 @@ void EMTFNtuple::fillTree() {
   me0Input_partition         ->clear();
 
   // DT Inputs
-  dtInput_wheel              ->clear();
-  dtInput_station            ->clear();
-  dtInput_btigroup           ->clear();
-  dtInput_bx                 ->clear();
-  dtInput_strip              ->clear();
-  dtInput_wire               ->clear();
-  dtInput_quality            ->clear();
-  dtInput_bend               ->clear();
+  // dtInput_wheel              ->clear();
+  // dtInput_station            ->clear();
+  // dtInput_btigroup           ->clear();
+  // dtInput_bx                 ->clear();
+  // dtInput_strip              ->clear();
+  // dtInput_wire               ->clear();
+  // dtInput_quality            ->clear();
+  // dtInput_bend               ->clear();
 
 
 
@@ -1161,8 +1191,12 @@ void EMTFNtuple::fillTree() {
   emtfTrack_invpt_prompt     ->clear();
   emtfTrack_invpt_displ      ->clear();
   emtfTrack_phi              ->clear();
+  emtfTrack_phi_fp           ->clear();
   emtfTrack_theta            ->clear();
+  emtfTrack_theta_fp         ->clear();
   emtfTrack_eta              ->clear();
+  emtfTrack_GMT_phi          ->clear();
+  emtfTrack_GMT_eta          ->clear();
   emtfTrack_q                ->clear();
   //
   emtfTrack_address          ->clear();
@@ -1204,7 +1238,9 @@ void EMTFNtuple::fillTree() {
   // GMT Muons
   gmtMuon_pt                 ->clear();
   gmtMuon_pt_dxy             ->clear();
+  gmtMuon_pt_dxyNN           ->clear();
   gmtMuon_dxy                ->clear();
+  gmtMuon_dxyNN              ->clear();
   gmtMuon_phi                ->clear();
   gmtMuon_eta                ->clear();
   gmtMuon_q                  ->clear();
@@ -1228,6 +1264,7 @@ void EMTFNtuple::fillTree() {
   genPart_phi                ->clear();
   genPart_q                  ->clear();
   genPart_ID                 ->clear();
+  genPart_parentID           ->clear();
   genPart_vx                 ->clear();
   genPart_vy                 ->clear();
   genPart_vz                 ->clear();
